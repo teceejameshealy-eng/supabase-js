@@ -34,8 +34,10 @@
       "{projectRoot}/src/**/*",
       "{projectRoot}/test/**/*",
       "{projectRoot}/.eslintrc*",
+      "{projectRoot}/eslint.config.mjs",
       "{projectRoot}/.prettierrc*",
       "{projectRoot}/tsconfig*.json",
+      "{workspaceRoot}/eslint.config.mjs",
       "sharedGlobals"
     ],
     "docs": [
@@ -59,7 +61,8 @@
       "{workspaceRoot}/.github/workflows/**/*",
       "{workspaceRoot}/nx.json",
       "{workspaceRoot}/package.json",
-      "{workspaceRoot}/package-lock.json",
+      "{workspaceRoot}/pnpm-lock.yaml",
+      "{workspaceRoot}/pnpm-workspace.yaml",
       "{workspaceRoot}/tsconfig.base.json",
       "{workspaceRoot}/tsconfig.json",
       "{workspaceRoot}/.prettierrc*",
@@ -113,17 +116,25 @@
     },
     "test:ci": {
       "inputs": ["testing", "^production"],
+      "dependsOn": ["^build"],
       "cache": true,
       "outputs": ["{projectRoot}/coverage"]
     },
     "test:ci:postgrest": {
       "inputs": ["testing", "^production"],
       "dependsOn": ["build"],
-      "cache": true,
+      "cache": false,
+      "outputs": ["{projectRoot}/coverage"]
+    },
+    "test:auth": {
+      "inputs": ["testing", "^production"],
+      "cache": false,
       "outputs": ["{projectRoot}/coverage"]
     },
     "test:storage": {
-      "cache": false
+      "inputs": ["testing", "^production"],
+      "cache": false,
+      "outputs": ["{projectRoot}/coverage"]
     },
     "test:suite": {
       "inputs": ["testing", "^production"],
@@ -137,6 +148,26 @@
       "cache": false
     },
     "test:clean-post": {
+      "cache": false
+    },
+    "test:docker": {
+      "inputs": ["testing", "^production"],
+      "cache": false
+    },
+    "test:docker:clean-pre": {
+      "cache": false
+    },
+    "test:docker:infra": {
+      "cache": false
+    },
+    "test:docker:suite": {
+      "inputs": ["testing", "^production"],
+      "cache": false
+    },
+    "test:docker:clean-post": {
+      "cache": false
+    },
+    "test:e2e": {
       "cache": false
     },
     "vite:test": {
@@ -215,7 +246,6 @@
       "plugin": "@nx/vite/plugin",
       "options": {
         "buildTargetName": "build",
-        "testTargetName": "vite:test",
         "serveTargetName": "serve",
         "devTargetName": "dev",
         "previewTargetName": "preview",
@@ -226,29 +256,25 @@
       }
     },
     {
-      "plugin": "@nx/webpack/plugin",
-      "options": {
-        "buildTargetName": "webpack:build",
-        "serveTargetName": "serve",
-        "previewTargetName": "preview",
-        "buildDepsTargetName": "build-deps",
-        "watchDepsTargetName": "watch-deps"
-      }
-    },
-    {
       "plugin": "@nx/eslint/plugin",
       "options": {
         "targetName": "lint",
         "exclude": ["**/example/**/*", "**/examples/**/*"]
+      }
+    },
+    {
+      "plugin": "@nx/vitest",
+      "options": {
+        "testTargetName": "vite:test"
       }
     }
   ],
   "release": {
     "projects": ["packages/core/*"],
     "projectsRelationship": "fixed",
-    "releaseTagPatternCheckAllBranchesWhen": true,
     "version": {
-      "conventionalCommits": true
+      "conventionalCommits": true,
+      "preserveMatchingDependencyRanges": false
     },
     "changelog": {
       "projectChangelogs": {
@@ -268,6 +294,11 @@
           "commitReferences": true
         }
       }
+    },
+    "releaseTag": {
+      "checkAllBranchesWhen": true,
+      "strictPreid": true
     }
-  }
+  },
+  "analytics": false
 }

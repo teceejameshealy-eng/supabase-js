@@ -26,17 +26,6 @@
 
 </div>
 
-> **For contributors: Repository Structure Changed**
->
-> This repository has been restructured as a monorepo. All libraries, including `supabase-js` itself, have moved to `packages/core/`:
->
-> | What You're Looking For | Where It Is Now              |
-> | ----------------------- | ---------------------------- |
-> | Main supabase-js code   | `packages/core/supabase-js/` |
-> | Other libraries         | `packages/core/*/`           |
->
-> Read the **[Migration Guide](./docs/MIGRATION.md)** to learn more.
-
 ## 📦 Libraries
 
 This monorepo contains the complete suite of Supabase JavaScript SDK:
@@ -91,6 +80,7 @@ We support Cloudflare Workers runtime environments. Cloudflare Workers provides 
 ### Important Notes
 
 - **Experimental features**: Features marked as experimental may be removed or changed without notice
+- **Build warnings**: If you see `UNUSED_EXTERNAL_IMPORT` warnings from Vite/Nuxt, see the [supabase-js README](./packages/core/supabase-js/README.md#known-build-warnings) — these are false positives
 
 ## 🚀 Quick Start
 
@@ -111,8 +101,8 @@ We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md)
 1. **Fork the repository**
 2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
 3. **Make your changes** and add tests
-4. **Run tests** (`npx nx affected --target=test`)
-5. **Commit your changes** (`npm run commit`)
+4. **Run tests** (`pnpm nx affected --target=test`)
+5. **Commit your changes** (`pnpm commit`)
 6. **Push to your branch** (`git push origin feature/amazing-feature`)
 7. **Open a Pull Request**
 
@@ -121,8 +111,8 @@ We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md)
 - Follow [conventional commits](https://www.conventionalcommits.org/) for commit messages
 - Add tests for new functionality
 - Update documentation for API changes
-- Run `npx nx format` before committing
-- Ensure all tests pass with `npx nx affected --target=test`
+- Run `pnpm nx format` before committing
+- Ensure all tests pass with `pnpm nx affected --target=test`
 
 ## 🧪 Testing
 
@@ -143,8 +133,9 @@ Testing varies per package. See the top-level [TESTING.md](docs/TESTING.md) for 
 
 - **[Contributing](./CONTRIBUTING.md)** - Development guidelines
 - **[Release Workflows](./docs/RELEASE.md)** - Release and publishing process
-- **[Migration Guide](./docs/MIGRATION.md)** - Migrating to the monorepo structure
-- **[Security Policy](./docs/SECURITY.md)** - Security guidelines and reporting
+- **[Migration Guide](./docs/MIGRATION.md)** - Cross-cutting migration notes (per-package migrations live alongside each package under `packages/core/<package>/migrations/`)
+- **[Security Policy](./docs/SECURITY.md)** - Vulnerability reporting and disclosure policy
+- **[Securing your npm installs](https://supabase.com/docs/guides/security/npm-security)** - Consumer-side guide to defending your install against npm supply-chain attacks
 
 ## 🔐 Verifying provenance attestations
 
@@ -170,6 +161,8 @@ audited 1 package in 0s
 ```
 
 Because provenance attestations are a new capability, security features may evolve over time. Ensure you are using the latest npm CLI to verify attestation signatures reliably. This may require updating npm beyond the version bundled with Node.js.
+
+For a broader checklist — minimum release age, lockfile hygiene, blocking exotic transitive deps, lifecycle script controls, and what to do if you suspect a compromise — see [Securing your npm installs](https://supabase.com/docs/guides/security/npm-security).
 
 ## 📄 License
 

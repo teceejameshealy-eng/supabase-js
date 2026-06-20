@@ -3,6 +3,7 @@ import {
   decodeJWT,
   generateCallbackId,
   getAlgorithm,
+  getItemAsync,
   parseParametersFromURL,
   parseResponseAPIVersion,
   getCodeChallengeAndMethod,
@@ -122,10 +123,8 @@ describe('parseResponseAPIVersion', () => {
 
 describe('decodeJWT', () => {
   it('should reject non-JWT strings', () => {
-    expect(() => decodeJWT('non-jwt')).toThrowError(
-      new AuthInvalidJwtError('Invalid JWT structure')
-    )
-    expect(() => decodeJWT('aHR0.cDovL.2V4YW1wbGUuY29t')).toThrowError(
+    expect(() => decodeJWT('non-jwt')).toThrow(new AuthInvalidJwtError('Invalid JWT structure'))
+    expect(() => decodeJWT('aHR0.cDovL.2V4YW1wbGUuY29t')).toThrow(
       new AuthInvalidJwtError('JWT not in base64url format')
     )
   })
@@ -264,18 +263,18 @@ describe('getAlgorithm', () => {
     })
   })
   it('should throw if invalid alg claim', () => {
-    expect(() => getAlgorithm('EdDSA' as any)).toThrowError(new Error('Invalid alg claim'))
+    expect(() => getAlgorithm('EdDSA' as any)).toThrow(new Error('Invalid alg claim'))
   })
 })
 
 describe('getCodeChallengeAndMethod', () => {
   const testCases = [
     {
-      name: 'should append /PASSWORD_RECOVERY to stored code_verifier',
+      name: 'should append /recovery to stored code_verifier',
       isPasswordRecovery: true,
     },
     {
-      name: 'should not append /PASSWORD_RECOVERY for other flows',
+      name: 'should not append /recovery for other flows',
       isPasswordRecovery: false,
     },
   ]
@@ -297,9 +296,9 @@ describe('getCodeChallengeAndMethod', () => {
     expect(setItemCall[0]).toBe('test-storage-key-code-verifier')
     const storedValue = JSON.parse(setItemCall[1])
     if (isPasswordRecovery) {
-      expect(storedValue).toContain('/PASSWORD_RECOVERY')
+      expect(storedValue).toContain('/recovery')
     } else {
-      expect(storedValue).not.toContain('/PASSWORD_RECOVERY')
+      expect(storedValue).not.toContain('/recovery')
     }
     expect(codeChallenge).toBeDefined()
     expect(codeChallengeMethod).toBeDefined()
@@ -338,5 +337,51 @@ describe('validateUUID', () => {
     } else {
       expect(() => validateUUID(input)).not.toThrow()
     }
+  })
+})
+
+describe('getItemAsync', () => {
+  const makeStorage = (initial: { [key: string]: string | null }) => {
+    const data: { [key: string]: string | null } = { ...initial }
+    return {
+      getItem: jest.fn(async (key: string) => data[key] ?? null),
+      setItem: jest.fn(async (key: string, value: string) => {
+        data[key] = value
+      }),
+      removeItem: jest.fn(async (key: string) => {
+        delete data[key]
+      }),
+    }
+  }
+
+  it('returns null when the storage value is missing', async () => {
+    const storage = makeStorage({})
+    expect(await getItemAsync(storage, 'session')).toBeNull()
+  })
+
+  it('returns null when the storage value is empty string', async () => {
+    const storage = makeStorage({ session: '' })
+    expect(await getItemAsync(storage, 'session')).toBeNull()
+  })
+
+  it('returns the parsed object for valid JSON', async () => {
+    const session = { access_token: 'a', refresh_token: 'b', expires_at: 1 }
+    const storage = makeStorage({ session: JSON.stringify(session) })
+    expect(await getItemAsync(storage, 'session')).toEqual(session)
+  })
+
+  it('returns null when the storage value is not valid JSON', async () => {
+    // Simulates corrupted chunked cookies: combined+decoded payload that is
+    // not parseable. Returning the raw string would cause _recoverAndRefresh
+    // to throw `TypeError: Cannot create property 'user' on string ...`.
+    const storage = makeStorage({ session: '{"access_token":"abc' })
+    expect(await getItemAsync(storage, 'session')).toBeNull()
+  })
+
+  it('returns null for a JSON-encoded primitive that auth callers do not expect', async () => {
+    // JSON.parse('"hello"') succeeds and returns the string "hello", which is
+    // valid behavior. We are only guarding against parse failures here.
+    const storage = makeStorage({ session: '"hello"' })
+    expect(await getItemAsync(storage, 'session')).toEqual('hello')
   })
 })
